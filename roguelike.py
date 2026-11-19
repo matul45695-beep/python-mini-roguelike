@@ -17,6 +17,12 @@ MAP = [
 ]
 DIRECTIONS = {"w": (0, -1), "s": (0, 1), "a": (-1, 0), "d": (1, 0)}
 
+MONSTER_TYPES = {
+    "スライム": {"symbol": "S", "hp": 3, "attack": 1},
+    "ゴブリン": {"symbol": "G", "hp": 5, "attack": 2},
+    "オーク": {"symbol": "O", "hp": 8, "attack": 3}
+}
+
 
 def new_game():
     walls, floors = set(), set()
@@ -32,12 +38,25 @@ def new_game():
                 player = (x, y)
             if ch == ">":
                 exit_pos = (x, y)
+
     candidates = sorted(floors - {player, exit_pos})
-    monsters = {p: {"hp": 5} for p in random.sample(candidates, 3)}
+
+    monsters = {}
+
+    for pos in random.sample(candidates, 5):
+        name = random.choice(list(MONSTER_TYPES))
+        monsters[pos] = {
+            "name": name,
+            "symbol": MONSTER_TYPES[name]["symbol"],
+            "hp": MONSTER_TYPES[name]["hp"],
+            "attack": MONSTER_TYPES[name]["attack"]
+        }
+        
     items = set(random.sample([p for p in candidates if p not in monsters], 4))
+
     return {"walls": walls, "floors": floors, "player": player, "exit": exit_pos,
             "monsters": monsters, "items": items, "hp": 18, "max_hp": 18,
-            "turn": 0, "message": "出口 > を目指そう。敵は M、回復薬は !"}
+            "turn": 0, "message": "出口 > を目指そう。敵は S/G/M、回復薬は !"}
 
 
 def draw_game(game):
@@ -50,12 +69,16 @@ def draw_game(game):
             pos = (x, y)
             if pos == game["player"]:
                 line += "@"
+
             elif pos in game["monsters"]:
-                line += "M"
+                line += game["monsters"][pos]["symbol"]
+
             elif pos in game["items"]:
                 line += "!"
+
             elif pos == game["exit"]:
                 line += ">"
+
             else:
                 line += "#" if pos in game["walls"] else "."
         print(line)
@@ -102,10 +125,11 @@ def monster_turn(game):
     # 敵は隣にいれば攻撃、それ以外はランダムに一歩動く
     moved = {}
     occupied = set(game["monsters"])
-    attacks = 0
+    total_damage = 0
+
     for pos, enemy in list(game["monsters"].items()):
         if adjacent(pos, game["player"]):
-            attacks += 1
+            total_damage += enemy["attack"]
             moved[pos] = enemy
             continue
         options = [pos]
@@ -119,9 +143,10 @@ def monster_turn(game):
         occupied.discard(pos)
         occupied.add(next_pos)
     game["monsters"] = moved
-    if attacks:
-        game["hp"] -= attacks * 2
-        game["message"] += f" 敵から{attacks * 2}ダメージ！"
+
+    if total_damage:
+        game["hp"] -= total_damage
+        game["message"] += f" 敵から{total_damage}ダメージ！"
 
 
 def main():
