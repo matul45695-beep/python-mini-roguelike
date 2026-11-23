@@ -19,7 +19,7 @@ VS Codeでファイルを開き、ターミナルから以下のように起動�
 ```powershell
 py -3.13 sokoban.py
 py -3.13 minesweeper.py
-py -3.13 roguelike.py
+py -3.12 roguelike.py
 py -3.13 ski_game.py
 py -3.13 tetris.py
 py -3.13 connect_four.py

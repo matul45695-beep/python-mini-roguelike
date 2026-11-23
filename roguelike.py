@@ -2,9 +2,9 @@
 import random
 
 MAP = [
-    "#####################",
-    "#@....#.............#",
-    "#.....#...##........#",
+    "######################",
+    "#@....#..............#",
+    "#.....#...##.........#",
     "#........##..#.......#",
     "#..###.......#.......#",
     "#......#.........#...#",
@@ -13,10 +13,11 @@ MAP = [
     "#..##........#...#...#",
     "#......#.........#...#",
     "#...................>#",
-    "#####################",
+    "######################",
 ]
 DIRECTIONS = {"w": (0, -1), "s": (0, 1), "a": (-1, 0), "d": (1, 0)}
 
+# モンスターの種類とステータス
 MONSTER_TYPES = {
     "スライム": {"symbol": "S", "hp": 3, "attack": 1},
     "ゴブリン": {"symbol": "G", "hp": 5, "attack": 2},
@@ -25,6 +26,7 @@ MONSTER_TYPES = {
 
 
 def new_game():
+    # マップの解析
     walls, floors = set(), set()
     player = None
     exit_pos = None
@@ -40,7 +42,7 @@ def new_game():
                 exit_pos = (x, y)
 
     candidates = sorted(floors - {player, exit_pos})
-
+# モンスターの配置
     monsters = {}
 
     for pos in random.sample(candidates, 5):
@@ -52,6 +54,7 @@ def new_game():
             "attack": MONSTER_TYPES[name]["attack"]
         }
         
+    # アイテムの配置
     items = set(random.sample([p for p in candidates if p not in monsters], 4))
 
     return {"walls": walls, "floors": floors, "player": player, "exit": exit_pos,
@@ -70,9 +73,11 @@ def draw_game(game):
             if pos == game["player"]:
                 line += "@"
 
+            # モンスターの描画
             elif pos in game["monsters"]:
                 line += game["monsters"][pos]["symbol"]
 
+            # アイテムの描画
             elif pos in game["items"]:
                 line += "!"
 
@@ -80,7 +85,7 @@ def draw_game(game):
                 line += ">"
 
             else:
-                line += "#" if pos in game["walls"] else "."
+                line += "#" if pos in game["walls"] else "░"
         print(line)
     print(f"HP {game['hp']}/{game['max_hp']}  ターン {game['turn']} | {game['message']}")
     print("WASD: 移動と攻撃 / .: 待機 / Q: 終了")
@@ -94,18 +99,23 @@ def player_turn(game, key):
     if key == ".":
         game["message"] = "その場で待機した。"
         return True
+    
     if key not in DIRECTIONS:
         return False
+    
     dx, dy = DIRECTIONS[key]
     pos = game["player"]
     next_pos = (pos[0] + dx, pos[1] + dy)
+
     if next_pos in game["walls"] or next_pos not in game["floors"]:
         game["message"] = "壁にぶつかった。"
         return False
+    
     if next_pos in game["monsters"]:
         enemy = game["monsters"][next_pos]
         enemy["hp"] -= 3
         game["message"] = "モンスターを攻撃！ 3ダメージ。"
+        
         if enemy["hp"] <= 0:
             del game["monsters"][next_pos]
             game["message"] = "モンスターを倒した！"
