@@ -77,29 +77,26 @@ def generate_map():
 
     return map_data
 
-test_map = generate_map()
-
-for row in range(len(test_map)):
-    print("".join(test_map[row]))
-
-
-
 def new_game():
     # マップの解析
+    map_data = generate_map()
+
+    height = len(map_data)
+    width = len(map_data[0])
+
     walls, floors = set(), set()
     player = None
     exit_pos = None
-    for y, row in enumerate(MAP):
+
+    for y, row in enumerate(map_data):
         for x, ch in enumerate(row):
             if ch == "#":
                 walls.add((x, y))
             else:
                 floors.add((x, y))
-            if ch == "@":
-                player = (x, y)
-            if ch == ">":
-                exit_pos = (x, y)
 
+    player = random.choice(list(floors))
+    exit_pos = random.choice(list(floors - {player}))
     candidates = sorted(floors - {player, exit_pos})
 # モンスターの配置
     monsters = {}
@@ -116,15 +113,27 @@ def new_game():
     # アイテムの配置
     items = set(random.sample([p for p in candidates if p not in monsters], 4))
 
-    return {"walls": walls, "floors": floors, "player": player, "exit": exit_pos,
-            "monsters": monsters, "items": items, "hp": 18, "max_hp": 18,
-            "turn": 0, "message": "出口 > を目指そう。敵は S/G/M、回復薬は !"}
+    return {"walls": walls, 
+            "floors": floors,
+            "height": height,
+            "width": width,
+            "player": player, 
+            "exit": exit_pos,
+            "monsters": monsters, 
+            "items": items, 
+            "hp": 18, 
+            "max_hp": 18,
+            "turn": 0, 
+            "message": "出口 > を目指そう。敵は S/G/M、回復薬は !"
+        }
 
 
 def draw_game(game):
     print("\n" * 2 + "=== MINI ROGUELIKE ===")
-    height = len(MAP)
-    width = len(MAP[0])
+
+    height = game["height"]
+    width = game["width"]
+
     for y in range(height):
         line = ""
         for x in range(width):
@@ -144,7 +153,7 @@ def draw_game(game):
                 line += ">"
 
             else:
-                line += "#" if pos in game["walls"] else "░"
+                line += "#" if pos in game["walls"] else " "
         print(line)
     print(f"HP {game['hp']}/{game['max_hp']}  ターン {game['turn']} | {game['message']}")
     print("WASD: 移動と攻撃 / .: 待機 / Q: 終了")
