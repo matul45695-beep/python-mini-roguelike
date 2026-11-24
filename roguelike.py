@@ -1,21 +1,9 @@
 """ミニローグ：ターン制のダンジョン探索と戦闘。標準ライブラリのみ。"""
 import random
 
-MAP = [
-    "######################",
-    "#@....#..............#",
-    "#.....#...##.........#",
-    "#........##..#.......#",
-    "#..###.......#.......#",
-    "#......#.........#...#",
-    "#......#...###...#...#",
-    "#............#.......#",
-    "#..##........#...#...#",
-    "#......#.........#...#",
-    "#...................>#",
-    "######################",
-]
 DIRECTIONS = {"w": (0, -1), "s": (0, 1), "a": (-1, 0), "d": (1, 0)}
+
+MAX_STAGE = 3
 
 # モンスターの種類とステータス
 MONSTER_TYPES = {
@@ -124,12 +112,13 @@ def new_game():
             "hp": 18, 
             "max_hp": 18,
             "turn": 0, 
-            "message": "出口 > を目指そう。敵は S/G/M、回復薬は !"
+            "stage": 1,
+            "message": "出口 > を目指そう。敵は S/G/O、回復薬は !"
         }
 
 
 def draw_game(game):
-    print("\n" * 2 + "=== MINI ROGUELIKE ===")
+    print("\n" * 2 + f"=== MINI ROGUELIKE : Stage {game['stage']} ===")
 
     height = game["height"]
     width = game["width"]
@@ -229,19 +218,43 @@ def monster_turn(game):
 
 def main():
     game = new_game()
+
     while game["hp"] > 0:
         draw_game(game)
+
         if game["player"] == game["exit"]:
-            print("ダンジョン脱出成功！")
-            return
+
+            if game["stage"] >= MAX_STAGE:
+                print(f"ステージ {game['stage']} をクリア！")
+                print("ゲームクリア！")
+                return
+
+            current_hp = game["hp"]
+            current_max_hp = game["max_hp"]
+            current_turn = game["turn"]
+            next_stage = game["stage"] + 1
+
+            print(f"ステージ {game['stage']} をクリア！")
+
+            game = new_game()
+            game["hp"] = current_hp
+            game["max_hp"] = current_max_hp
+            game["turn"] = current_turn
+            game["stage"] = next_stage
+
+            continue
+        
         key = input("操作 > ").strip().lower()[:1]
+
         if key == "q":
             return
+        
         if player_turn(game, key):
             game["turn"] += 1
             if game["player"] != game["exit"]:
                 monster_turn(game)
     draw_game(game)
+
     print("ゲームオーバー！")
 
 
