@@ -24,6 +24,65 @@ MONSTER_TYPES = {
     "オーク": {"symbol": "O", "hp": 8, "attack": 3}
 }
 
+def generate_map():
+    """マップの自動生成"""
+
+    # マップサイズの設定
+    width, height = 21, 15
+
+    map_data = []
+
+    for y in range(height):
+        row = ["#" for _ in range(width)]
+        map_data.append(row)
+
+    # ランダムなスタート位置の設定（奇数座標）
+    start_x, start_y = random.randrange(1, width-1, 2), random.randrange(1, height-1, 2)
+    
+    # 開始位置を床に設定 
+    map_data[start_y][start_x] = "."
+
+    stack = [(start_x, start_y)]
+
+    dig_directions = [
+        (0, -2),  # 上
+        (0,  2),  # 下
+        (-2, 0),  # 左
+        ( 2, 0)   # 右
+    ]
+
+    while stack:
+        x, y = stack[-1]
+
+        candidates = []
+
+        for dx, dy in dig_directions:
+            nx, ny = x + dx, y + dy
+            if 0 < nx < width-1 and 0 < ny < height-1:
+                if map_data[ny][nx] == "#":
+                    candidates.append((nx, ny))
+
+        if candidates:
+            nx, ny = random.choice(candidates)
+
+            mx, my = (x + nx) // 2, (y + ny) // 2
+
+            map_data[ny][nx] = "."
+            map_data[my][mx] = "."
+
+            stack.append((nx, ny))
+
+        else:
+            stack.pop()
+
+    return map_data
+
+test_map = generate_map()
+
+for row in range(len(test_map)):
+    print("".join(test_map[row]))
+
+
 
 def new_game():
     # マップの解析
