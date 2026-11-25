@@ -19,6 +19,9 @@ MAX_STAGE = 3
 # 死神が出現するターン数
 REAPER_SPAWN_TURN = 100
 
+# ゴブリンのプレイヤー感知範囲（マンハッタン距離）
+GOBLIN_CHACE_RANGE = 5
+
 # モンスターの種類とステータス
 MONSTER_TYPES = {
     "スライム": {"symbol": "S","color": GREEN, "hp": 3, "attack": 1, "ai": "random", "invincible": False, "normal_spawn": True},

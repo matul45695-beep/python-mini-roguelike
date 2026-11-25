@@ -4,10 +4,11 @@ import random
 from config import DIRECTIONS, MAX_STAGE, REAPER_SPAWN_TURN, MONSTER_TYPES
 from monster import Monster
 from renderer import draw_game
+from ai import manhattan_distance, can_detect_player, chase_move
 
 
 def generate_map():
-    """深さ優先探索（DFS）を用いた穴掘り法を用いたマップの自動生成"""
+    """深さ優先探索（DFS）による穴掘り法を用いたマップの自動生成"""
 
     # 外周の壁を残しやすくするために、幅と高さは奇数に設定
     width, height = 21, 15
@@ -140,7 +141,7 @@ def new_game():
 def adjacent(a, b):
     # ２つの座標が上下左右に隣接しているか判定
 
-    return abs(a[0] - b[0]) + abs(a[1] - b[1]) == 1
+    return manhattan_distance(a, b) == 1
 
 
 def player_turn(game, key):
@@ -204,9 +205,16 @@ def monster_turn(game):
                     and target != game["player"] and target != game["exit"]):
                 options.append(target)
         next_pos = random.choice(options)
+
+        if enemy.ai == "chase" and can_detect_player(pos, game["player"]):
+            next_pos = chase_move(options, game["player"])
+        else:
+            next_pos = random.choice(options)
+
         moved[next_pos] = enemy
         occupied.discard(pos)
         occupied.add(next_pos)
+        
     game["monsters"] = moved
 
     if total_damage:
@@ -239,8 +247,10 @@ def main():
 
             print(f"ステージ {game['stage']} をクリア！")
 
-            # 次のステージのマップ・敵・アイテムを引き継ぐ
+            # 次のステージのマップ・敵・アイテムを生成
             game = new_game()
+
+            # 前のステージのプレイヤーのHP・最大HP・ターン数・ステージ数を引き継ぐ
             game["hp"] = current_hp
             game["max_hp"] = current_max_hp
             game["turn"] = current_turn
