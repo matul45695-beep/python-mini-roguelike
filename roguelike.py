@@ -4,12 +4,14 @@ import random
 DIRECTIONS = {"w": (0, -1), "s": (0, 1), "a": (-1, 0), "d": (1, 0)}
 
 MAX_STAGE = 3
+REAPER_SPQWN_TURN = 100
 
 # モンスターの種類とステータス
 MONSTER_TYPES = {
-    "スライム": {"symbol": "S", "hp": 3, "attack": 1},
-    "ゴブリン": {"symbol": "G", "hp": 5, "attack": 2},
-    "オーク": {"symbol": "O", "hp": 8, "attack": 3}
+    "スライム": {"symbol": "S", "hp": 3, "attack": 1, "ai": "random", "invincible": False, "normal_spawn": True},
+    "ゴブリン": {"symbol": "G", "hp": 5, "attack": 2, "ai": "chase", "invincible": False, "normal_spawn": True},
+    "オーク": {"symbol": "O", "hp": 8, "attack": 3, "ai": "bfs", "invincible": False, "normal_spawn": True},
+    "死神": {"symbol": "R", "hp": 999, "attack": 999, "ai": "bfs", "invincible": True, "normal_spawn": False}
 }
 
 
@@ -109,18 +111,27 @@ def new_game():
     # プレイヤーと出口を除いた配置候補を取得
     candidates = sorted(floors - {player, exit_pos})
 
-    # 重複しない座標にモンスターを配置
-    monsters = {}
+    # 通常出現するモンスターのみの抽出
+    normal_monsters = [
+         name for name, data in MONSTER_TYPES.items() 
+        if data["normal_spawn"]
+    ]
 
+    # モンスターの種類の配置
+    monsters = {}
+        
     for pos in random.sample(candidates, 5):
-        # モンスターの種類をランダムに決定
-        name = random.choice(list(MONSTER_TYPES))
-        monsters[pos] = {
-            "name": name,
-            "symbol": MONSTER_TYPES[name]["symbol"],
-            "hp": MONSTER_TYPES[name]["hp"],
-            "attack": MONSTER_TYPES[name]["attack"]
-        }
+        name = random.choice(normal_monsters)
+
+        # モンスターの定義データをコピー
+        monsters[pos] = MONSTER_TYPES[name].copy()
+
+        # モンスターの名前を追加
+        monsters[pos]["name"] = name
+
+
+
+        
         
     # アイテムの配置
     items = set(random.sample([p for p in candidates if p not in monsters], 4))
@@ -137,6 +148,7 @@ def new_game():
             "max_hp": 18,
             "turn": 0, 
             "stage": 1,
+            "stage_turn": 0,
             "message": "出口 > を目指そう。敵は S/G/O、回復薬は !"
         }
 
@@ -170,7 +182,8 @@ def draw_game(game):
             else:
                 line += "#" if pos in game["walls"] else " "
         print(line)
-    print(f"HP {game['hp']}/{game['max_hp']}  ターン {game['turn']} | {game['message']}")
+    print(f"HP {game['hp']}/{game['max_hp']}  累計ターン {game['turn']}  滞在ターン {game['stage_turn']}")
+    print(game['message'])
     print("WASD: 移動と攻撃 / .: 待機 / Q: 終了")
 
 
@@ -290,6 +303,7 @@ def main():
         
         if player_turn(game, key):
             game["turn"] += 1
+            game["stage_turn"] += 1
             if game["player"] != game["exit"]:
                 monster_turn(game)
     draw_game(game)
