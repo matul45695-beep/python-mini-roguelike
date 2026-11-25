@@ -1,7 +1,8 @@
 """ミニローグ：ターン制のダンジョン探索と戦闘。標準ライブラリのみ。"""
 import random
 
-from config import DIRECTIONS, MAX_STAGE, REAPER_SPQWN_TURN, MONSTER_TYPES
+from config import DIRECTIONS, MAX_STAGE, REAPER_SPAWN_TURN, MONSTER_TYPES
+from monster import Monster
 
 def generate_map():
     """深さ優先探索（DFS）を用いた穴掘り法を用いたマップの自動生成"""
@@ -111,16 +112,9 @@ def new_game():
     for pos in random.sample(candidates, 5):
         name = random.choice(normal_monsters)
 
-        # モンスターの定義データをコピー
-        monsters[pos] = MONSTER_TYPES[name].copy()
+        # モンスターのインスタンスを作成
+        monsters[pos] = Monster(name)
 
-        # モンスターの名前を追加
-        monsters[pos]["name"] = name
-
-
-
-        
-        
     # アイテムの配置
     items = set(random.sample([p for p in candidates if p not in monsters], 4))
 
@@ -158,7 +152,7 @@ def draw_game(game):
 
             # モンスターの描画
             elif pos in game["monsters"]:
-                line += game["monsters"][pos]["symbol"]
+                line += game["monsters"][pos].symbol
 
             # アイテムの描画
             elif pos in game["items"]:
@@ -201,10 +195,11 @@ def player_turn(game, key):
     
     if next_pos in game["monsters"]:
         enemy = game["monsters"][next_pos]
-        enemy["hp"] -= 3
+
+        enemy.take_damage(3)
         game["message"] = "モンスターを攻撃！ 3ダメージ。"
         
-        if enemy["hp"] <= 0:
+        if not enemy.is_alive():
             del game["monsters"][next_pos]
             game["message"] = "モンスターを倒した！"
     else:
@@ -229,10 +224,12 @@ def monster_turn(game):
 
     for pos, enemy in list(game["monsters"].items()):
         if adjacent(pos, game["player"]):
-            total_damage += enemy["attack"]
+            total_damage += enemy.attack
             moved[pos] = enemy
             continue
+
         options = [pos]
+
         for dx, dy in DIRECTIONS.values():
             target = (pos[0] + dx, pos[1] + dy)
             if (target in game["floors"] and target not in occupied
