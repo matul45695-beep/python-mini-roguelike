@@ -3,6 +3,8 @@ import random
 
 from config import DIRECTIONS, MAX_STAGE, REAPER_SPAWN_TURN, MONSTER_TYPES
 from monster import Monster
+from renderer import draw_game
+
 
 def generate_map():
     """深さ優先探索（DFS）を用いた穴掘り法を用いたマップの自動生成"""
@@ -133,40 +135,6 @@ def new_game():
             "stage_turn": 0,
             "message": "出口 > を目指そう。敵は S/G/O、回復薬は !"
         }
-
-
-def draw_game(game):
-    """現在のゲーム状態をターミナルへ描画する"""
-
-    print("\n" * 2 + f"=== MINI ROGUELIKE : Stage {game['stage']} ===")
-
-    height = game["height"]
-    width = game["width"]
-
-    for y in range(height):
-        line = ""
-        for x in range(width):
-            pos = (x, y)
-            if pos == game["player"]:
-                line += "@"
-
-            # モンスターの描画
-            elif pos in game["monsters"]:
-                line += game["monsters"][pos].symbol
-
-            # アイテムの描画
-            elif pos in game["items"]:
-                line += "!"
-
-            elif pos == game["exit"]:
-                line += ">"
-
-            else:
-                line += "#" if pos in game["walls"] else " "
-        print(line)
-    print(f"HP {game['hp']}/{game['max_hp']}  累計ターン {game['turn']}  滞在ターン {game['stage_turn']}")
-    print(game['message'])
-    print("WASD: 移動と攻撃 / .: 待機 / Q: 終了")
 
 
 def adjacent(a, b):

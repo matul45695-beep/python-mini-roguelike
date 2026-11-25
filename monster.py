@@ -12,6 +12,7 @@ class Monster:
 
         self.name = name
         self.symbol = data["symbol"]
+        self.color = data["color"]
         self.hp = data["hp"]
         self.attack = data["attack"]
         self.ai = data["ai"]
