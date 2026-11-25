@@ -12,12 +12,14 @@ MONSTER_TYPES = {
     "オーク": {"symbol": "O", "hp": 8, "attack": 3}
 }
 
-def generate_map():
-    """マップの自動生成"""
 
-    # マップサイズの設定
+def generate_map():
+    """深さ優先探索（DFS）を用いた穴掘り法を用いたマップの自動生成"""
+
+    # 外周の壁を残しやすくするために、幅と高さは奇数に設定
     width, height = 21, 15
 
+    #  全てのマスを壁 "#" で初期化
     map_data = []
 
     for y in range(height):
@@ -30,8 +32,10 @@ def generate_map():
     # 開始位置を床に設定 
     map_data[start_y][start_x] = "."
 
+    # バックトラック用の探索経路を記録するスタック
     stack = [(start_x, start_y)]
 
+    # 上下左右の方向ベクトル（通路の間に壁を残す為に2マスずつ移動）
     dig_directions = [
         (0, -2),  # 上
         (0,  2),  # 下
@@ -39,42 +43,55 @@ def generate_map():
         ( 2, 0)   # 右
     ]
 
+    # スタックが空になるまで穴掘り処理を繰り返す
     while stack:
+        # スタックの末尾の要素（現在の探索地点の座標）を取得
         x, y = stack[-1]
 
+        # 現在位置から掘ることができる座標を格納するリスト
         candidates = []
 
         for dx, dy in dig_directions:
             nx, ny = x + dx, y + dy
+
+            # 外周の壁を除いた範囲内か確認
             if 0 < nx < width-1 and 0 < ny < height-1:
+                # まだ探索していない壁だけを候補として追加
                 if map_data[ny][nx] == "#":
                     candidates.append((nx, ny))
 
         if candidates:
+            # 掘ることができる候補からランダムに選択
             nx, ny = random.choice(candidates)
 
+            # 現在位置と移動先の中間地点を計算
             mx, my = (x + nx) // 2, (y + ny) // 2
 
+            # 移動先と中間地点を床 "." に変更
             map_data[ny][nx] = "."
             map_data[my][mx] = "."
 
+            # 移動先を次の探索地点として登録
             stack.append((nx, ny))
 
         else:
+            # 行き止まりの場合はバックトラックする
             stack.pop()
 
     return map_data
 
+
 def new_game():
-    # マップの解析
+    """ダンジョンを生成し、ゲームデータを初期化する"""
+
+    # ランダムマップの作成
     map_data = generate_map()
 
+    # 生成されたマップサイズを取得
     height = len(map_data)
     width = len(map_data[0])
 
     walls, floors = set(), set()
-    player = None
-    exit_pos = None
 
     for y, row in enumerate(map_data):
         for x, ch in enumerate(row):
@@ -83,13 +100,20 @@ def new_game():
             else:
                 floors.add((x, y))
 
+    # プレイヤーの初期位置をランダムに設定
     player = random.choice(list(floors))
+
+    # プレイヤーと重複しない位置に出口を配置
     exit_pos = random.choice(list(floors - {player}))
+
+    # プレイヤーと出口を除いた配置候補を取得
     candidates = sorted(floors - {player, exit_pos})
-# モンスターの配置
+
+    # 重複しない座標にモンスターを配置
     monsters = {}
 
     for pos in random.sample(candidates, 5):
+        # モンスターの種類をランダムに決定
         name = random.choice(list(MONSTER_TYPES))
         monsters[pos] = {
             "name": name,
@@ -118,6 +142,8 @@ def new_game():
 
 
 def draw_game(game):
+    """現在のゲーム状態をターミナルへ描画する"""
+
     print("\n" * 2 + f"=== MINI ROGUELIKE : Stage {game['stage']} ===")
 
     height = game["height"]
@@ -149,10 +175,14 @@ def draw_game(game):
 
 
 def adjacent(a, b):
+    # ２つの座標が上下左右に隣接しているか判定
+
     return abs(a[0] - b[0]) + abs(a[1] - b[1]) == 1
 
 
 def player_turn(game, key):
+    """プレイヤーの移動・攻撃・アイテム取得を処理する"""
+
     if key == ".":
         game["message"] = "その場で待機した。"
         return True
@@ -189,6 +219,8 @@ def player_turn(game, key):
 
 
 def monster_turn(game):
+    """モンスターの移動と攻撃を処理"""
+
     # 敵は隣にいれば攻撃、それ以外はランダムに一歩動く
     moved = {}
     occupied = set(game["monsters"])
@@ -217,18 +249,23 @@ def monster_turn(game):
 
 
 def main():
+    """ゲームの進行とステージの切り替えを管理"""
+
     game = new_game()
 
     while game["hp"] > 0:
         draw_game(game)
 
+        # プレイヤーが出口に到達したか判定
         if game["player"] == game["exit"]:
 
+            # 最終ステージの場合はゲームを終了
             if game["stage"] >= MAX_STAGE:
                 print(f"ステージ {game['stage']} をクリア！")
                 print("ゲームクリア！")
                 return
 
+            # 新しいステージで初期化されるデータを一時保存
             current_hp = game["hp"]
             current_max_hp = game["max_hp"]
             current_turn = game["turn"]
@@ -236,12 +273,14 @@ def main():
 
             print(f"ステージ {game['stage']} をクリア！")
 
+            # 次のステージのマップ・敵・アイテムを引き継ぐ
             game = new_game()
             game["hp"] = current_hp
             game["max_hp"] = current_max_hp
             game["turn"] = current_turn
             game["stage"] = next_stage
 
+            # 次のステージを描画するためループの先頭へ戻る
             continue
         
         key = input("操作 > ").strip().lower()[:1]
