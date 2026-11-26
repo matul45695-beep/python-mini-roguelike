@@ -1,4 +1,4 @@
-# MINIMUM DUNGEON
+# MINIMUM DUNGEON's
 
 ## ゲームの概要
 
