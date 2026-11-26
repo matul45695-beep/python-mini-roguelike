@@ -4,7 +4,7 @@ import random
 from config import DIRECTIONS, MAX_STAGE, REAPER_SPAWN_TURN, MONSTER_TYPES
 from monster import Monster
 from renderer import draw_game
-from ai import manhattan_distance, can_detect_player, chase_move
+from ai import manhattan_distance, can_detect_player, chase_move, bfs_move
 
 
 def generate_map():
@@ -208,6 +208,14 @@ def monster_turn(game):
 
         if enemy.ai == "chase" and can_detect_player(pos, game["player"]):
             next_pos = chase_move(options, game["player"])
+
+        elif enemy.ai == "bfs":
+            # 侵入禁止座標を作成
+            blocked = (occupied - {pos}) | {game["exit"]}
+
+            # BFSでプレイヤーに最短距離で近づく移動先を探索
+            next_pos = bfs_move(pos, game["player"], game["floors"], blocked)
+
         else:
             next_pos = random.choice(options)
 

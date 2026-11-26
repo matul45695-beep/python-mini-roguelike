@@ -20,7 +20,7 @@ MAX_STAGE = 3
 REAPER_SPAWN_TURN = 100
 
 # ゴブリンのプレイヤー感知範囲（マンハッタン距離）
-GOBLIN_CHACE_RANGE = 5
+GOBLIN_CHASE_RANGE = 5
 
 # モンスターの種類とステータス
 MONSTER_TYPES = {
